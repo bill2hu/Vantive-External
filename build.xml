@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Vantive-ExternalRating-Web" default="dist" basedir=".">
+
+	<property name="project.name" value="VantiveExternalRating"/>
+	<property name="it.java.dir" value="../../../.."/>
+	<property name="classes.dir" value="web/WEB-INF/classes"/>
+	
+  <!--
+    base-build.xml is included here which defines all the necessary common
+    properties and tasks needed to build and deploy this project.
+  -->
+  <import file="${it.java.dir}/Common/java/Core/base-build.xml"/>
+	
+	<!-- This is the fileset of com.savvis.it jars that this project requires -->
+	<target name="copy-required-jars">
+		<copy todir="tmp/lib" overwrite="true">
+			<fileset dir="${it.java.dir}/Common/java/Core/dist" includes="it-common-core.jar"/>
+			<fileset dir="${it.java.dir}/Common/java/DB/dist" includes="*.jar"/>
+			<fileset dir="${it.java.dir}/Common/java/Web/dist" includes="*.jar"/>
+			<fileset dir="${it.java.dir}/Common/java/App/dist" includes="*.jar"/>
+			<fileset dir="${it.java.dir}/vantive/java/Core/dist" includes="*.jar"/>
+			<fileset dir="${it.java.dir}/vantive/java/DB/dist" includes="*.jar"/>
+			<fileset dir="${it.java.dir}/vantive/ExternalRating/java/Batch/dist" includes="it-vantive-externalRating.jar"/>
+			<fileset dir="${it.java.dir}/3rdParty/java/JakartaCommons/1.0" includes="commons-fileupload-1.2.jar"/>
+			<fileset dir="${it.java.dir}/3rdParty/java/Log4j/1.2.8" includes="*.jar"/>
+		</copy>
+	</target> 
+	
+	<!--
+		This task creates the distributable file for this project.  
+		Call this task indirectly by using dist-dev, dist-stage or dist-prod.
+		Currently this task assumes all classes have been compiled to the build/classes directory.
+		This task should call either war, jar, ear, a custom task, or a combination 
+		of them to create the desired distributable.
+	-->
+	<target name="dist" description="Creates the environment specific file for distribution"
+				depends="copy-common-web">
+		<antcall target="war"/>
+	</target>
+		
+</project>
