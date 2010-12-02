@@ -70,7 +70,7 @@ function smRemoveEvent(obj, evType, fn, useCapture){
  *
  * Gets the full width/height because it's different for most browsers.
  */
-function svGetViewportHeight() {
+function smGetViewportHeight() {
 	if (window.innerHeight!=window.undefined) return window.innerHeight;
 	if (document.compatMode=='CSS1Compat') return document.documentElement.clientHeight;
 	if (document.body) return document.body.clientHeight; 
@@ -136,7 +136,7 @@ var gSMPopFrame = null;
 var gSMReturnFunc;
 var gSMReturnFuncWindow;
 var gSMPopupIsShown = false;
-var gSMDefaultPage = svWebContext+"/common/loading.html";
+var gSMDefaultPage = "";
 var gSMHideSelects = false;
 var gSMReturnVal = null;
 
@@ -278,7 +278,7 @@ function smCenterPopWin(width, height) {
 		
 		var titleBarHeight = parseInt(document.getElementById("smPopupTitleBar").offsetHeight, 10);
 		
-		var fullHeight = svGetViewportHeight();
+		var fullHeight = smGetViewportHeight();
 		var fullWidth = smGetViewportWidth();
 		
 		gSMPopupContainer.style.top = (scTop + ((fullHeight - (height+titleBarHeight)) / 2)) + "px";
@@ -298,7 +298,7 @@ window.onscroll = smCenterPopWin;
 function smSetMaskSize() {
 	var theBody = document.getElementsByTagName("BODY")[0];
 			
-	var fullHeight = svGetViewportHeight();
+	var fullHeight = smGetViewportHeight();
 	var fullWidth = smGetViewportWidth();
 	
 	// Determine what's bigger, scrollHeight or fullHeight / width

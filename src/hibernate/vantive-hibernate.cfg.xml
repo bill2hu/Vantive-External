@@ -12,7 +12,7 @@
 			com.inet.tds.TdsDriver
 		</property>
 		<!-- <property name="connection.url">jdbc:inetdae7:vntdb1sa.savvis.ad.savvis.net:5004?database=sv_vantive_test</property>-->
-		<property name="connection.url">jdbc:inetdae7:vntdb1da.savvis.ad.savvis.net:5004?database=devsav</property>
+		<property name="connection.url">jdbc:inetdae7:vntdb1da.savvis.ad.savvis.net:5004?database=devsav_2</property>
 		<property name="connection.username">BizServices</property>
 		<property name="connection.password">Cab4u!</property>
 

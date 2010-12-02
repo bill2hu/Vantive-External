@@ -59,12 +59,12 @@ function svSubmitActionAndId(action, index, target) {
 function svSubmit(action, index, target) {
 	top.smShowPopWin(svWebContext+'/common/jsp/loading.jsp', 150, 150);
 	if(target)
-		if(index)
+		if(index || index == 0)
 			setTimeout("svSubmitActionAndIndex('"+action+"', '"+index+"', '"+target+"');", 100);
 		else 
 			setTimeout("svSubmitAction('"+action+"', '"+target+"');", 100);
 	else
-		if(index)
+		if(index || index == 0)
 			setTimeout("svSubmitActionAndIndex('"+action+"', '"+index+"');", 100);
 		else 
 			setTimeout("svSubmitAction('"+action+"');", 100);
@@ -681,6 +681,12 @@ function svValidateForm() {
 			}
 		}
 	}
+
+	try {
+		if(!validationSuccessful)
+			top.smHidePopWin();
+	} catch (e) {}
+	
 	return validationSuccessful;
 }
 function svGetInputBySuffix(suffix) {

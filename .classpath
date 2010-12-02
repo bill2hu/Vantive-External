@@ -11,6 +11,5 @@
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/Vantive-Core"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/Vantive-DB"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/Vantive-ExternalRating-Batch"/>
-	<classpathentry kind="src" path="etc"/>
 	<classpathentry kind="output" path="web/WEB-INF/classes"/>
 </classpath>

@@ -1,4 +1,4 @@
-#Fri Jul 23 13:35:21 CDT 2010
+#Thu Dec 02 09:33:31 CST 2010
 eclipse.preferences.version=1
-validator.Checked=web/common,web/WEB-INF,etc/hibernate/biz-hibernate-mappings.cfg.xml
+validator.Checked=src/hibernate/biz-hibernate-mappings.cfg.xml,web/common,web/WEB-INF,etc/hibernate/biz-hibernate-mappings.cfg.xml
 validator.Unchecked=
