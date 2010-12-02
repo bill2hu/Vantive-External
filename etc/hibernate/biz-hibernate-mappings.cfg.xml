@@ -1,0 +1,6 @@
+		<mapping resource="com/savvis/it/biz/db/data/hibernate/BillingCycle.hbm.xml"/>
+		<mapping resource="com/savvis/it/biz/db/data/hibernate/BillingOperation.hbm.xml"/>
+		<mapping resource="com/savvis/it/biz/db/data/hibernate/BillingType.hbm.xml"/>
+		<mapping resource="com/savvis/it/biz/db/data/hibernate/BurstableInternetCharge.hbm.xml"/>
+		<mapping resource="com/savvis/it/biz/db/data/hibernate/ErrorMessage.hbm.xml"/>
+		<mapping resource="com/savvis/it/biz/db/data/hibernate/ErrorMessageType.hbm.xml"/>
