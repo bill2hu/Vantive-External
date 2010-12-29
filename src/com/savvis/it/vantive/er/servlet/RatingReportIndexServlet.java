@@ -4,20 +4,18 @@
 package com.savvis.it.vantive.er.servlet;
 
 
-import static com.savvis.it.util.ObjectUtil.toCommaDelimitedString;
 import static com.savvis.it.util.StringUtil.hasValue;
 import static com.savvis.it.util.StringUtil.replaceAll;
 import static com.savvis.it.util.StringUtil.toList;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,20 +27,19 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 import com.savvis.it.biz.db.BizDBUtil;
 import com.savvis.it.biz.db.data.BillingCycle;
-import com.savvis.it.biz.db.data.BillingType;
 import com.savvis.it.db.DBConnection;
 import com.savvis.it.db.DBUtil;
-import com.savvis.it.db.util.BeanUtil;
+import com.savvis.it.filter.WindowsAuthenticationFilter;
 import com.savvis.it.servlet.SavvisServlet;
 import com.savvis.it.util.CommandLineProcess;
 import com.savvis.it.util.Context;
 import com.savvis.it.util.DateUtil;
 import com.savvis.it.util.ObjectUtil;
 import com.savvis.it.util.PropertyManager;
-import com.savvis.it.util.StringUtil;
+import com.savvis.it.util.SimpleNode;
 import com.savvis.it.util.SystemUtil;
+import com.savvis.it.util.XmlUtil;
 import com.savvis.it.vantive.db.VantiveDBUtil;
-import com.savvis.it.vantive.db.data.AcctInstProduct;
 import com.savvis.it.vantive.externalrating.batch.VantiveExternalRating;
 
 /**
@@ -55,68 +52,108 @@ public class RatingReportIndexServlet extends SavvisServlet {
 	
 	private static Logger logger = Logger.getLogger(RatingReportIndexServlet.class);
 	
-	private static PropertyManager properties = new PropertyManager("/properties/externalRating.properties", 
-				"externalRating.properties");
+	private static PropertyManager properties = new PropertyManager("/properties/externalRating.properties", "externalRating.properties");
+	private static String productCfg = properties.getProperty("extRating.config");
+	
+	private static String jspPageReport = "/jsp/ratingReport.jsp";
+	private static String jspPageIndex = "/jsp/reportIndex.jsp";
+	
+	private WindowsAuthenticationFilter.WindowsPrincipal winPrincipal = null;
 
 	@Override
-	protected void processRequest(String action, HttpServletRequest request, HttpServletResponse response)
-				throws Exception {
+	protected void processRequest(String action, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		logger.info("action = "+(action));
+
+		/* get and authorize the user, otherwise, nothing else to do */
+		winPrincipal = (WindowsAuthenticationFilter.WindowsPrincipal) request.getSession().getAttribute(
+				WindowsAuthenticationFilter.AUTHENTICATION_PRINCIPAL_KEY);
 		
+		/* get db connections */
 		DBConnection conn = VantiveDBUtil.currentVntConnection();
-		DBConnection bizConn = BizDBUtil.currentConnection("biz");
+		DBConnection bizConn = BizDBUtil.currentConnection(properties.getProperty("biz.db"));
+		
+		
 		try {
+			
+			/* set up lists to use in dropdowns */
 			List savvisCompanies = DBUtil.executeProcedureOneColumn("vantive", "svsp_site_get_savvis_company");
 			savvisCompanies.add(0, "-- All Savvis Companies --");
 			request.setAttribute("savvisCompanies", savvisCompanies);
 			request.setAttribute("monthValues", Arrays.asList(new Integer[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
-			request.setAttribute("monthLabels", toList("January, February, March, April, May, June, July, August, " +
-			"September, October, November, December"));
+			request.setAttribute("monthLabels", 
+					toList("January, February, March, " +
+							"April, May, June, " +
+							"July, August, September, " +
+							"October, November, December")
+			);
+			
+			/* default the month and year to generate a report */
 			request.setAttribute("defaultYear", Calendar.getInstance().get(Calendar.YEAR));
 			request.setAttribute("defaultMonth", Calendar.getInstance().get(Calendar.MONTH));
-			request.setAttribute("billingCycles", toList("July 13, 2010 9:46 AM (Start Date: May 01, 2010)", "|"));
 			
-			getBillingCycles(bizConn, request);
-
-			if(!hasValue(action)) {
-				forward("/jsp/reportIndex.jsp", request, response);
-			} else if("runReport".equals(action)) {
+			/* get product groups to display in drop down by using config file */
+			String productConfigLocation = SystemUtil.getBASEDIR() + "/"+ SystemUtil.getAPPL() + "/config/misc/"+ productCfg;
+			if(new File(productConfigLocation).exists()) {
+				try {
+					String x = XmlUtil.doc2String(XmlUtil.loadDocumentFromFile(productConfigLocation));
+				} catch (Exception e) {
+					logger.error("", e);
+				}
+				
+				/* loop through the nodes and save into list */
+				SimpleNode productsConfig = new SimpleNode(XmlUtil.loadDocumentFromFile(productConfigLocation).getFirstChild());
+				List<SimpleNode> productGroups = productsConfig.getChildren("productGroup");
+				List<String> products = new ArrayList<String>();
+				for (SimpleNode productGroup : productGroups) {
+					//logger.info("productGroup: " + productGroup);
+					products.add(productGroup.getAttribute("billingType"));
+				}
+				Collections.sort(products);
+				request.setAttribute("billingTypes", products);
+			}
+			
+			if("runReport".equals(action)) {
 				performDBOperations(conn, null, action, request, response);
 				
-				getBillingCycles(bizConn, request);
-
-				forward("/jsp/reportIndex.jsp", request, response);
+				forward(jspPageIndex, request, response);
 			} else if("viewReport".equals(action) || "export".equals(action)) {
 				String report = request.getParameter("report");
 				request.setAttribute("report", report);
 				
-				BillingCycle billingCycle = (BillingCycle)DBUtil.findById(bizConn, BillingCycle.class, 
-							request.getParameter("cycle"));
-				billingCycle.getBillingType().getName();
-				billingCycle.getBurstableInternetChargeList().size();
-				request.setAttribute("billingCycle", billingCycle);
-				
-				String reportType = VantiveExternalRating.CHARGES_REPORT_TYPE;
-				if(report.equals("Usage Exceptions"))
-					reportType = VantiveExternalRating.EXCEPTIONS_REPORT_TYPE;
-				
-				if("export".equals(action)) {
-//					request.setAttribute("export", true);
-					response.setContentType("application/vnd.ms-excel");
-					SimpleDateFormat sdf = new SimpleDateFormat("MMMM");
-					response.setHeader("Content-Disposition", "attachment; filename=\""+report+" "+
-								sdf.format(billingCycle.getStartDate())+" "+
-								billingCycle.getBillingCycleId()+".xls\"");
-					HSSFWorkbook wb = new VantiveExternalRating().createBillingCycleWorkbook(conn, billingCycle, reportType);
-					wb.write(response.getOutputStream());
-					return;
+				if (ObjectUtil.isEmpty(request.getParameter("cycle"))) {
+					request.setAttribute("fatalMsg", "A billing cycle must be selected in order to view an existing report.");
+					forward(jspPageIndex, request, response);
 				} else {
-					List<Map<String,Object>> reportData = new VantiveExternalRating().createBillingCycleReport(
-								conn, billingCycle, reportType);
-					request.setAttribute("reportData", reportData);
+					BillingCycle billingCycle = (BillingCycle)DBUtil.findById(bizConn, BillingCycle.class, 
+							request.getParameter("cycle"));
+					billingCycle.getBillingType().getName();
+					billingCycle.getBurstableInternetChargeList().size();
+					request.setAttribute("billingCycle", billingCycle);
 					
-					forward("/jsp/ratingReport.jsp", request, response);
+					String reportType = VantiveExternalRating.CHARGES_REPORT_TYPE;
+					if(report.equals("Usage Exceptions"))
+						reportType = VantiveExternalRating.EXCEPTIONS_REPORT_TYPE;
+					
+					if("export".equals(action)) {
+	//					request.setAttribute("export", true);
+						response.setContentType("application/vnd.ms-excel");
+						SimpleDateFormat sdf = new SimpleDateFormat("MMMM");
+						response.setHeader("Content-Disposition", "attachment; filename=\""+report+" "+
+									sdf.format(billingCycle.getStartDate())+" "+
+									billingCycle.getBillingCycleId()+".xls\"");
+						HSSFWorkbook wb = new VantiveExternalRating().createBillingCycleWorkbook(conn, billingCycle, reportType);
+						wb.write(response.getOutputStream());
+						return;
+					} else {
+						List<Map<String,Object>> reportData = new VantiveExternalRating().createBillingCycleReport(
+									conn, billingCycle, reportType);
+						request.setAttribute("reportData", reportData);
+						
+						forward(jspPageReport, request, response);
+					}
 				}
+			} else {
+				forward(jspPageIndex, request, response);
 			}
 		} catch (Exception e) {
 			throw e;
@@ -127,32 +164,10 @@ public class RatingReportIndexServlet extends SavvisServlet {
 	}
 	
 	/**
-	 * @param bizConn
-	 * @param request
-	 * @throws Exception 
-	 */
-	private void getBillingCycles(DBConnection conn, HttpServletRequest request) throws Exception {
-		List<BillingCycle> list = DBUtil.executeHqlQuery(conn, 
-					"FROM BillingCycle WHERE billingType.name = 'External Rating' " +
-					"ORDER BY dateCreated DESC");
-		List<String> billingCycleDescriptions = new ArrayList<String>();
-		List<Object> billingCycleIds = new ArrayList<Object>();
-		for (BillingCycle billingCycle : list) {
-			String s = getBillingCycleDescription(billingCycle);
-			billingCycleDescriptions.add(s);
-			billingCycleIds.add(billingCycle.getId());
-		}
-		request.setAttribute("billingCycleDescriptions", billingCycleDescriptions);
-		request.setAttribute("billingCycleIds", billingCycleIds);
-	}
-
-	/**
-	 * @param sdf
-	 * @param sdf2
 	 * @param billingCycle
-	 * @return
+	 * @return String
 	 */
-	private String getBillingCycleDescription(BillingCycle billingCycle) {
+	private static String getBillingCycleDescription(BillingCycle billingCycle) {
 		SimpleDateFormat sdf = new SimpleDateFormat("MMMM d, yyyy h:mm aa");
 		SimpleDateFormat sdf2 = new SimpleDateFormat("MMMM d, yyyy");
 		return sdf.format(billingCycle.getDateCreated())+" (Start Date: "+
@@ -166,26 +181,38 @@ public class RatingReportIndexServlet extends SavvisServlet {
 		if("runReport".equals(action)) {
 //			properties.reload();
 
-			List<Map<String, Object>> commands = toList("");
-			Context globalContext = new Context();
-			
 			Calendar cal = Calendar.getInstance();
 			cal.set(getIntegerParameter(request, "year"), getIntegerParameter(request, "month"), 1);
 			
-			String beginDate = DateUtil.formatDate(cal.getTime());
+			String beginDate = new SimpleDateFormat("MM/dd/yyyy").format(cal.getTime());
 			
 			cal.add(Calendar.MONTH, 1);
-			cal.add(Calendar.DAY_OF_YEAR, -1);
-			String endDate = DateUtil.formatDate(cal.getTime());
+			
+			// the services we call behave differently - need a better way to do this, but for now...
+			if ("Image Management".equals(request.getParameter("billingType"))) {
+				// need to subtract one to keep Image Mgmt working the same way - end goal is to have
+				// the services we call behave the same
+				cal.add(Calendar.DAY_OF_YEAR, -1);
+			}
+			String endDate = new SimpleDateFormat("MM/dd/yyyy").format(cal.getTime());
 			
 			CommandLineProcess clp = new CommandLineProcess();
 			clp.setWaitForProcess(true);
 			
-			String cmd = properties.getProperty("batch.job.command")+" -beginDate "+beginDate+" -endDate "+endDate;
+			String cmd = properties.getProperty("batch.job.command") + 
+				" -vantivedb " + properties.getProperty("vantive.db") +
+				" -bizdb " + properties.getProperty("biz.db") +
+				" -config " + properties.getProperty("extRating.config") +
+				" -beginDate " + beginDate + 
+				" -endDate " + endDate + 
+				" -productGroup \"" + request.getParameter("billingType") + "\"" +
+				" -user \"" + winPrincipal.getName() + "\"" +
+				"";
+			logger.info("cmd: " + cmd);
 			cmd = replaceAll(cmd, "[[classpath]]", properties.getProperty("java.class.path", null));
-			logger.info("properties.getProperty(\"start.dir\") = "+(properties.getProperty("start.dir")));
+			logger.info("start.dir: " + properties.getProperty("start.dir"));
 			clp.setDir(new File((String) properties.getProperty("start.dir")));
-			logger.info("properties.getProperty(\"log.file\") = "+(properties.getProperty("log.file", null)));
+			logger.info("log.file: " + properties.getProperty("log.file", null));
 			if(properties.getProperty("log.file", null) != null)
 				clp.setOutputStream(new FileOutputStream(properties.getProperty("log.file", null), true));
 			else
@@ -197,13 +224,14 @@ public class RatingReportIndexServlet extends SavvisServlet {
 			Map<String, String> envMap = System.getenv();
 			for (Object key : envMap.keySet())
 				envList.add(key + "=" + envMap.get(key));
-			envList.add("CALLED_BY_USER=TEST");// + winPrincipal.getName());
+			envList.add("CALLED_BY_USER="+winPrincipal.getName());
 			envList.add("APPL="+SystemUtil.getAPPL());
 			envList.add("BASEDIR="+SystemUtil.getBASEDIR());
 			clp.setEnvp((String[]) envList.toArray(new String[] {}));
 			
 			logger.info("cmd: " + cmd);
 			int exitCode = clp.run(cmd);
+//			int exitCode = 0;
 
 			logger.info("output: " + clp.getOutput());
 			if (exitCode != 0) {
@@ -217,5 +245,30 @@ public class RatingReportIndexServlet extends SavvisServlet {
 			}
 		}
 	}
+
+	public static LinkedHashMap<Object, Object> getBillingCycles(String billingType) {
+		LinkedHashMap<Object, Object> cycles = new LinkedHashMap<Object, Object>();
+		
+		DBConnection bizConn = BizDBUtil.currentConnection("biz");
+
+		try {
+			List<BillingCycle> list = DBUtil.executeHqlQuery(bizConn, 
+					"FROM BillingCycle WHERE billingType.name = '" + billingType + "' " +
+					"AND dateCreated > getdate() - 180 ORDER BY dateCreated DESC");
+			for (BillingCycle billingCycle : list) {
+				logger.info("adding [" + billingCycle.getId() + "] -> [" + getBillingCycleDescription(billingCycle) + "]");
+				cycles.put(billingCycle.getId().toString(), getBillingCycleDescription(billingCycle));
+			}
+
+		} catch (Exception e) {
+			logger.error("", e);
+		} finally {
+			// free the session
+			DBUtil.closeConnection(bizConn);
+		}
+		
+		return cycles;
+	}
+	
 
 }
