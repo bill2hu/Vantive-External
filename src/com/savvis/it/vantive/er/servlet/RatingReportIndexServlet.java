@@ -4,7 +4,6 @@
 package com.savvis.it.vantive.er.servlet;
 
 
-import static com.savvis.it.util.StringUtil.hasValue;
 import static com.savvis.it.util.StringUtil.replaceAll;
 import static com.savvis.it.util.StringUtil.toList;
 
@@ -18,6 +17,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -31,12 +31,13 @@ import com.savvis.it.db.DBConnection;
 import com.savvis.it.db.DBUtil;
 import com.savvis.it.filter.WindowsAuthenticationFilter;
 import com.savvis.it.servlet.SavvisServlet;
+import com.savvis.it.tags.SelectList;
 import com.savvis.it.util.CommandLineProcess;
 import com.savvis.it.util.Context;
-import com.savvis.it.util.DateUtil;
 import com.savvis.it.util.ObjectUtil;
 import com.savvis.it.util.PropertyManager;
 import com.savvis.it.util.SimpleNode;
+import com.savvis.it.util.StringUtil;
 import com.savvis.it.util.SystemUtil;
 import com.savvis.it.util.XmlUtil;
 import com.savvis.it.vantive.db.VantiveDBUtil;
@@ -60,7 +61,6 @@ public class RatingReportIndexServlet extends SavvisServlet {
 	
 	private WindowsAuthenticationFilter.WindowsPrincipal winPrincipal = null;
 
-	@Override
 	protected void processRequest(String action, HttpServletRequest request, HttpServletResponse response) throws Exception {
 		logger.info("action = "+(action));
 
@@ -93,6 +93,8 @@ public class RatingReportIndexServlet extends SavvisServlet {
 			
 			/* get product groups to display in drop down by using config file */
 			String productConfigLocation = SystemUtil.getBASEDIR() + "/"+ SystemUtil.getAPPL() + "/config/misc/"+ productCfg;
+			logger.info("productConfigLocation: " + productConfigLocation);
+			logger.info("productConfigLocation).exists(): " + new File(productConfigLocation).exists());
 			if(new File(productConfigLocation).exists()) {
 				try {
 					String x = XmlUtil.doc2String(XmlUtil.loadDocumentFromFile(productConfigLocation));
@@ -103,13 +105,16 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				/* loop through the nodes and save into list */
 				SimpleNode productsConfig = new SimpleNode(XmlUtil.loadDocumentFromFile(productConfigLocation).getFirstChild());
 				List<SimpleNode> productGroups = productsConfig.getChildren("productGroup");
-				List<String> products = new ArrayList<String>();
+				SelectList products = new SelectList();
+				SelectList billingTypes = new SelectList();
+				billingTypes.addOption("", "");
 				for (SimpleNode productGroup : productGroups) {
-					//logger.info("productGroup: " + productGroup);
-					products.add(productGroup.getAttribute("billingType"));
+					logger.info("productGroup: " + productGroup);
+					products.addOption(productGroup.getAttribute("name"), productGroup.getAttribute("billingType"));
+					billingTypes.addOption(productGroup.getAttribute("billingType"), productGroup.getAttribute("billingType"));
 				}
-				Collections.sort(products);
-				request.setAttribute("billingTypes", products);
+				request.setAttribute("products", products);
+				request.setAttribute("billingTypes", billingTypes);
 			}
 			
 			if("runReport".equals(action)) {
@@ -174,7 +179,6 @@ public class RatingReportIndexServlet extends SavvisServlet {
 					sdf2.format(billingCycle.getStartDate())+")";
 	}
 
-	@Override
 	protected void performProtectedDBOperations(DBConnection conn, Object data, String action,
 				HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
@@ -205,8 +209,8 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				" -config " + properties.getProperty("extRating.config") +
 				" -beginDate " + beginDate + 
 				" -endDate " + endDate + 
-				" -productGroup '" + request.getParameter("billingType").replaceAll(" ", "") + "'" +
-				" -user '" + winPrincipal.getName() + "'" +
+				" -productGroup " + request.getParameter("billingType") +
+				" -user " + winPrincipal.getName() +
 				"";
 			logger.info("cmd: " + cmd);
 			cmd = replaceAll(cmd, "[[classpath]]", properties.getProperty("java.class.path", null));

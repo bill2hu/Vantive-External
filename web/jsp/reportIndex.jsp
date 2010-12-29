@@ -90,7 +90,7 @@
 				<tr>
 					<td class="inputTitle">Billing Type</td>
 					<td>
-						<sv:select items="${billingTypes}" name="billingType" addEmptyEntry="false"/>
+						<sv:select items="${products}" name="billingType" addEmptyEntry="false"/>
 					</td>
 				</tr>
 				<tr>
@@ -113,7 +113,7 @@
 				<tr>
 					<td class="inputTitle">Billing Type</td>
 					<td>
-						<sv:select items="${billingTypes}" name="billingType" id="billingTypeName" onchange="Javascript:updateBillingCycles();"/>
+						<sv:select items="${billingTypes}"  name="billingType" id="billingTypeName" onchange="Javascript:updateBillingCycles();" />
 					</td>
 				</tr>
 				<tr>
