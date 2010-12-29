@@ -205,8 +205,8 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				" -config " + properties.getProperty("extRating.config") +
 				" -beginDate " + beginDate + 
 				" -endDate " + endDate + 
-				" -productGroup \"" + request.getParameter("billingType") + "\"" +
-				" -user \"" + winPrincipal.getName() + "\"" +
+				" -productGroup '" + request.getParameter("billingType") + "'" +
+				" -user '" + winPrincipal.getName() + "'" +
 				"";
 			logger.info("cmd: " + cmd);
 			cmd = replaceAll(cmd, "[[classpath]]", properties.getProperty("java.class.path", null));
