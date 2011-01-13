@@ -20,7 +20,7 @@
 			<fileset dir="${it.java.dir}/Common/java/App/dist" includes="*.jar"/>
 			<fileset dir="${it.java.dir}/vantive/java/Core/dist" includes="*.jar"/>
 			<fileset dir="${it.java.dir}/vantive/java/DB/dist" includes="*.jar"/>
-			<fileset dir="${it.java.dir}/vantive/ExternalRating/java/Batch/dist" includes="it-vantive-externalRating.jar"/>
+			<fileset dir="${it.java.dir}/vantive/ExternalRating/java/Batch/dist" includes="*-batch.jar"/>
 			<fileset dir="${it.java.dir}/3rdParty/java/JakartaCommons/1.0" includes="commons-fileupload-1.2.jar"/>
 			<fileset dir="${it.java.dir}/3rdParty/java/Log4j/1.2.8" includes="*.jar"/>
 		</copy>
