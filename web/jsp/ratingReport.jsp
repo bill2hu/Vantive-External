@@ -15,7 +15,7 @@
 	<c:if test='${not export}'>
 		<sv:head title="External Rating Report Index"></sv:head>
 	
-		<link rel="stylesheet" href="css/genericUpload.css"/>
+		<link rel="stylesheet" href="css/main.css"/>
 	</c:if>
 	
 	<body>
@@ -35,34 +35,36 @@
 			
 			<table width="100%" cellspacing="0" cellpadding="4" border="0">
 				<tr>
-					<td class="uploadHdr" colspan="3"><strong>Rating Report:  ${billingCycle.billingType.name} 
+					<td class="reportHdr"><strong>Rating Report:  ${billingCycle.billingType.name} 
 								<sv:out value="${billingCycle.startDate}"/> - <sv:out value="${billingCycle.throughDate}"/></strong></td>
+					<c:if test='${not export}'>
+							<td width="33%" align="right">Switch Report Type: 
+								<sv:select items="${reportTypes}" name="report" addEmptyEntry="false"
+											onchange="svSubmitAction('viewReport')" value="${report}"/>
+							</td>
+						</tr>
+					</c:if>
 				</tr>
 				<c:if test='${not export}'>
 					<tr>
-						<td width="33%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
-						<td width="34%" align="center">
-							<a href="#" class="validationLink" onclick="svSubmitAction('')">Report Index</a>&nbsp;&nbsp;&nbsp;
+						<td>
+							<a href="#" class="pgLink" onclick="svSubmitAction('')">Return to External Rating Home</a>&nbsp;&nbsp;&nbsp;
 							<c:if test='${not empty reportData}'>
-								<a href="#" class="validationLink" onclick="svSubmitAction('export')">Export to Excel</a>
+								&nbsp;&nbsp;|&nbsp;&nbsp;
+								<a href="#" class="pgLink" onclick="svSubmitAction('export')">Export this Report to Excel</a>
 							</c:if>
-						</td>
-						<td width="33%" align="right">
-							Switch to Report: 
-							<sv:select items="External Rating,Usage Exceptions" name="report" addEmptyEntry="false"
-										onchange="svSubmitAction('viewReport')" value="${report}"/>
 						</td>
 					</tr>
 				</c:if>
 			</table>
+			<br/>
 			
 			<center>
 				<c:if test='${empty reportData}'>
 					No results were found
 				</c:if>
 				<c:if test='${not empty reportData}'>
-					<sv:dataTable data="${reportData}" 
-								border="1" cellpadding="4" cellspacing="1">
+					<sv:dataTable data="${reportData}" styleClass="dataTbl">
 					</sv:dataTable>
 				</c:if>
 			</center>

@@ -44,7 +44,7 @@
 			<tr>
 				<td width="5"></td>
 				<td>
-					<img src="/VantiveExternalRating/common/images/savvisLogoRebranded.png" width="175"/>
+					<img src='<c:url value="/common/images/savvisLogoRebranded.png"/>' width="175"/>
 				</td>
 				<td class="pgLink"><a class="pgLink" href="?">Refresh This Page</a></td>
 			</tr>
@@ -95,7 +95,7 @@
 				</tr>
 				<tr>
 					<td class="inputTitle">&nbsp;</td>
-					<td><br/><button onclick="svSubmitAction('runReport')">Generate Charges</button></td>
+					<td><br/><button onclick="svSubmit('runReport')">Generate Charges</button></td>
 				</tr>
 				<tr>
 					<td colspan="2"><br/><br/></td>
@@ -126,12 +126,12 @@
 				<tr>
 					<td class="inputTitle">Rating Report</td>
 					<td>
-						<sv:select items="External Rating,Usage Exceptions" name="report" addEmptyEntry="false"/>
+						<sv:select items="${reportTypes}" name="report" addEmptyEntry="false"/>
 					</td>
 				</tr>
 				<tr>
 					<td class="inputTitle">&nbsp;</td>
-					<td><br/><button onclick="svSubmitAction('viewReport')">View Existing Report</button></td>
+					<td><br/><button onclick="svSubmit('viewReport')">View Existing Report</button></td>
 				</tr>
 			</table>
 		</form>

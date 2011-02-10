@@ -11,6 +11,12 @@
   
 	<convert converter="map" match="java.util.Map"/>
     
+   	<!-- P13NService -->
+    <create creator="new" javascript="P13NService">
+      <param name="class" value="com.savvis.it.service.p13n.P13NServiceImpl"/>
+    </create>
+    
+    <convert converter="bean" match="com.savvis.it.service.p13n.P13N"/>
   </allow>
 
 </dwr>

@@ -53,7 +53,7 @@ public class RatingReportIndexServlet extends SavvisServlet {
 	
 	private static Logger logger = Logger.getLogger(RatingReportIndexServlet.class);
 	
-	private static PropertyManager properties = new PropertyManager("/properties/externalRating.properties", "externalRating.properties");
+	private static PropertyManager properties = new PropertyManager("/properties/external_rating_web.properties", "external_rating_web.properties");
 	private static String productCfg = properties.getProperty("extRating.config");
 	
 	private static String jspPageReport = "/jsp/ratingReport.jsp";
@@ -69,14 +69,15 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				WindowsAuthenticationFilter.AUTHENTICATION_PRINCIPAL_KEY);
 		
 		/* get db connections */
-		DBConnection conn = VantiveDBUtil.currentVntConnection();
+		DBConnection vanConn = VantiveDBUtil.currentConnection(properties.getProperty("vantive.db"));
 		DBConnection bizConn = BizDBUtil.currentConnection(properties.getProperty("biz.db"));
 		
 		
 		try {
 			
 			/* set up lists to use in dropdowns */
-			List savvisCompanies = DBUtil.executeProcedureOneColumn("vantive", "svsp_site_get_savvis_company");
+			List savvisCompanies = DBUtil.executeProcedureOneColumn(properties.getProperty("vantive.db"), "svsp_site_get_savvis_company");
+			Collections.sort(savvisCompanies);
 			savvisCompanies.add(0, "-- All Savvis Companies --");
 			request.setAttribute("savvisCompanies", savvisCompanies);
 			request.setAttribute("monthValues", Arrays.asList(new Integer[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}));
@@ -86,6 +87,7 @@ public class RatingReportIndexServlet extends SavvisServlet {
 							"July, August, September, " +
 							"October, November, December")
 			);
+			request.setAttribute("reportTypes", VantiveExternalRating.getReportTypes());
 			
 			/* default the month and year to generate a report */
 			request.setAttribute("defaultYear", Calendar.getInstance().get(Calendar.YEAR));
@@ -118,7 +120,7 @@ public class RatingReportIndexServlet extends SavvisServlet {
 			}
 			
 			if("runReport".equals(action)) {
-				performDBOperations(conn, null, action, request, response);
+				performDBOperations(vanConn, null, action, request, response);
 				
 				forward(jspPageIndex, request, response);
 			} else if("viewReport".equals(action) || "export".equals(action)) {
@@ -132,26 +134,22 @@ public class RatingReportIndexServlet extends SavvisServlet {
 					BillingCycle billingCycle = (BillingCycle)DBUtil.findById(bizConn, BillingCycle.class, 
 							request.getParameter("cycle"));
 					billingCycle.getBillingType().getName();
-					billingCycle.getBurstableInternetChargeList().size();
+					billingCycle.getChargeList().size();
 					request.setAttribute("billingCycle", billingCycle);
 					
-					String reportType = VantiveExternalRating.CHARGES_REPORT_TYPE;
-					if(report.equals("Usage Exceptions"))
-						reportType = VantiveExternalRating.EXCEPTIONS_REPORT_TYPE;
-					
 					if("export".equals(action)) {
-	//					request.setAttribute("export", true);
 						response.setContentType("application/vnd.ms-excel");
-						SimpleDateFormat sdf = new SimpleDateFormat("MMMM");
-						response.setHeader("Content-Disposition", "attachment; filename=\""+report+" "+
-									sdf.format(billingCycle.getStartDate())+" "+
-									billingCycle.getBillingCycleId()+".xls\"");
-						HSSFWorkbook wb = new VantiveExternalRating().createBillingCycleWorkbook(conn, billingCycle, reportType);
+						SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+						logger.info("report: " + report);
+						response.setHeader("Content-Disposition", "attachment; filename=\"EXTRATING_"+
+									sdf.format(billingCycle.getStartDate())+"-"+
+									sdf.format(billingCycle.getThroughDate())+".xls\"");
+						HSSFWorkbook wb = new VantiveExternalRating().createBillingCycleWorkbook(vanConn, billingCycle, report);
 						wb.write(response.getOutputStream());
 						return;
 					} else {
 						List<Map<String,Object>> reportData = new VantiveExternalRating().createBillingCycleReport(
-									conn, billingCycle, reportType);
+									vanConn, billingCycle, report);
 						request.setAttribute("reportData", reportData);
 						
 						forward(jspPageReport, request, response);
@@ -163,7 +161,7 @@ public class RatingReportIndexServlet extends SavvisServlet {
 		} catch (Exception e) {
 			throw e;
 		} finally {
-			VantiveDBUtil.closeConnection(conn);
+			VantiveDBUtil.closeConnection(vanConn);
 			DBUtil.closeConnection(bizConn);
 		}
 	}
