@@ -1,4 +1,0 @@
-		<mapping resource="com/savvis/it/biz/db/data/hibernate/BillingCycle.hbm.xml"/>
-		<mapping resource="com/savvis/it/biz/db/data/hibernate/BillingType.hbm.xml"/>
-		<mapping resource="com/savvis/it/biz/db/data/hibernate/Charge.hbm.xml"/>
-		<mapping resource="com/savvis/it/biz/db/data/hibernate/ErrorMsg.hbm.xml"/>
