@@ -206,9 +206,11 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				" -beginDate " + beginDate + 
 				" -endDate " + endDate + 
 				" -productGroup " + request.getParameter("billingType") +
-				" -svvsComp " + request.getParameter("savvisCompanies") +
 				" -user " + winPrincipal.getName() +
 				"";
+			if (request.getParameter("savvisCompanies") != null) {
+				cmd += " -svvsComp " + request.getParameter("savvisCompanies");
+			}
 			logger.info("cmd: " + cmd);
 			cmd = replaceAll(cmd, "[[classpath]]", properties.getProperty("java.class.path", null));
 			logger.info("start.dir: " + properties.getProperty("start.dir"));
