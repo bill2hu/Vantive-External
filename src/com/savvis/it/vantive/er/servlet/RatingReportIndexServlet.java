@@ -181,8 +181,6 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		if("runReport".equals(action)) {
-//			properties.reload();
-
 			Calendar cal = Calendar.getInstance();
 			cal.set(getIntegerParameter(request, "year"), getIntegerParameter(request, "month"), 1);
 			
@@ -191,7 +189,7 @@ public class RatingReportIndexServlet extends SavvisServlet {
 			cal.add(Calendar.MONTH, 1);
 			
 			// the services we call behave differently - need a better way to do this, but for now...
-			if ("Image Management".equals(request.getParameter("billingType"))) {
+			if ("ImageManagement".equals(request.getParameter("billingType"))) {
 				// need to subtract one to keep Image Mgmt working the same way - end goal is to have
 				// the services we call behave the same
 				cal.add(Calendar.DAY_OF_YEAR, -1);
@@ -208,6 +206,7 @@ public class RatingReportIndexServlet extends SavvisServlet {
 				" -beginDate " + beginDate + 
 				" -endDate " + endDate + 
 				" -productGroup " + request.getParameter("billingType") +
+				" -svvsComp " + request.getParameter("savvisCompanies") +
 				" -user " + winPrincipal.getName() +
 				"";
 			logger.info("cmd: " + cmd);
